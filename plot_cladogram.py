@@ -346,6 +346,7 @@ if __name__ == '__main__':
     params['fore_color'] = 'w' if params['back_color'] == 'k' else 'k'
     if params['customized_colors']:
         colors = [i.strip() for i in params['customized_colors'].split(',')]
-    clad_tree = read_data(params['input_file'],params)    
-    draw_tree(params['output_file'],clad_tree,params)
+    if os.path.exists(params['input_file']) and os.path.getsize(params['input_file']):
+        clad_tree = read_data(params['input_file'],params)    
+        draw_tree(params['output_file'],clad_tree,params)
     
