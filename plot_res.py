@@ -49,7 +49,8 @@ def read_data(input_file,output_file,otu_only):
     if len(classes) < 1: 
         print("No differentially abundant features found in "+input_file)
         os.system("touch "+output_file)
-        sys.exit()
+        return {}
+        # sys.exit()
     data = {}
     data['rows'] = rows
     data['cls'] = classes
@@ -179,7 +180,8 @@ if __name__ == '__main__':
     if params['customized_colors']:
         colors = [i.strip() for i in params['customized_colors'].split(',')]
     data = read_data(params['input_file'],params['output_file'],params['otu_only'])
-    if params['orientation'] == 'v': plot_histo_ver(params['output_file'],params,data,params['report_features'])
-    else: plot_histo_hor(params['output_file'],params,data,len(data['cls']) == 2,params['report_features'])
+    if data:
+        if params['orientation'] == 'v': plot_histo_ver(params['output_file'],params,data,params['report_features'])
+        else: plot_histo_hor(params['output_file'],params,data,len(data['cls']) == 2,params['report_features'])
 
     
