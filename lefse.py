@@ -3,6 +3,7 @@ import random as lrand
 import rpy2.robjects as robjects
 import argparse
 import numpy
+import re
 #import svmutil
 
 def init():
@@ -177,10 +178,18 @@ def test_lda_r(cls,feats,cl_sl,boots,fract_sample,lda_th,tol_min,nlogs):
     robjects.globalenv["d"] = robjects.DataFrame(rdict)
     lfk = len(feats[fk[0]])
     rfk = int(float(len(feats[fk[0]]))*fract_sample)
-    f = "class ~ "+fk[0]
+    f = "class ~ "
+    tmp_fL = [fk[0]]
 
     for k in fk[1:]:
-        f += " + " + k.strip()
+        #f += " + " + k.strip()
+        tmp_fL.append(k.strip())
+
+    f = f + " + ".join(tmp_fL)
+
+    unexpected_symbol = re.compile(r'[^a-zA-Z0-9 ._+]')
+    if unexpected_symbol.search(f):
+        print("Unexpected symbols exist in species name! Pleas check!!!!!")
 
     ncl = len(set(cls['class']))
     min_cl = int(float(min([cls['class'].count(c) for c in set(cls['class'])]))*fract_sample*fract_sample*0.5)
@@ -191,6 +200,8 @@ def test_lda_r(cls,feats,cl_sl,boots,fract_sample,lda_th,tol_min,nlogs):
         for i in range(boots):
             means[k].append([])
 
+    current_working_directory = os.getcwd()
+
     for i in range(boots):
         for rtmp in range(1000):
             rand_s = [lrand.randint(0,lfk-1) for v in range(rfk)]
@@ -200,10 +211,19 @@ def test_lda_r(cls,feats,cl_sl,boots,fract_sample,lda_th,tol_min,nlogs):
         rand_s = [r+1 for r in rand_s]
         means[k][i] = []
 
+        
+
         for p in pairs:
             robjects.globalenv["rand_s"] = robjects.IntVector(rand_s)
             robjects.globalenv["sub_d"] = robjects.r('d[rand_s,]')
-            z = robjects.r('z <- suppressWarnings(lda(as.formula('+f+'),data=sub_d,tol='+str(tol_min)+'))')
+            z_r_code = 'z <- suppressWarnings(lda(as.formula('+f+'),data=sub_d,tol='+str(tol_min)+'))'
+            z_lda_file = f"{current_working_directory}/z_lda.r"
+            fh = open(z_lda_file, 'w')
+            print(z_r_code, file=fh)
+            fh.close()
+            # print(z_r_code)
+            # z = robjects.r(z_r_code)
+            z = robjects.r.source(z_lda_file)
             robjects.r('w <- z$scaling[,1]')
             robjects.r('w.unit <- w/sqrt(sum(w^2))')
             robjects.r('ss <- sub_d[,-match("class",colnames(sub_d))]')
